@@ -1,49 +1,148 @@
-const form = document.querySelector("form");
-const input = document.querySelector("input[type='text']");
-const list = document.querySelector("ul");
-const status = document.querySelector("#status");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const list = document.getElementById("list");
+const resetBtn = document.getElementById("resetBtn");
+const stats = document.getElementById("stats");
+const themeToggle = document.getElementById("themeToggle");
+const bgPicker = document.getElementById("bgPicker");
 
-form.addEventListener("submit", function (event) {
-    event.preventDefault();
+let items = JSON.parse(localStorage.getItem("handleliste")) || [];
+let dragIndex = null;
 
-    const text = input.value.trim();
-    if (text === "") return;
+function save() {
+    localStorage.setItem("handleliste", JSON.stringify(items));
+}
 
-    const li = document.createElement("li");
+function render() {
+    list.innerHTML = "";
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
+    items.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.draggable = true;
 
-    const span = document.createElement("span");
-    span.textContent = text;
+        li.addEventListener("dragstart", () => dragIndex = index);
+        li.addEventListener("dragover", e => e.preventDefault());
+        li.addEventListener("drop", () => reorder(index));
 
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Slett";
-    deleteButton.type = "button";
+        // VENSTRE SIDE (tekst)
+        const left = document.createElement("div");
+        left.classList.add("item-left");
 
-    deleteButton.addEventListener("click", function () {
-        li.remove();
-        checkIfDone();
+        const span = document.createElement("span");
+        span.textContent = item.text;
+
+        if (item.completed) {
+            span.style.textDecoration = "line-through";
+            span.style.opacity = "0.6";
+        }
+
+        span.addEventListener("dblclick", () => {
+            if (item.completed) return;
+            span.contentEditable = true;
+            span.focus();
+        });
+
+        span.addEventListener("blur", () => {
+            span.contentEditable = false;
+            items[index].text = span.textContent.trim();
+            save();
+        });
+
+        left.appendChild(span);
+
+        // HØYRE SIDE (checkbox + slett)
+        const right = document.createElement("div");
+        right.classList.add("item-right");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.completed;
+
+        checkbox.addEventListener("change", () => {
+            items[index].completed = checkbox.checked;
+            save();
+            render();
+        });
+
+        const del = document.createElement("button");
+        del.textContent = "X";
+        del.onclick = () => remove(index);
+
+        right.appendChild(checkbox);
+        right.appendChild(del);
+
+        li.appendChild(left);
+        li.appendChild(right);
+
+        list.appendChild(li);
     });
 
-    checkbox.addEventListener("change", checkIfDone);
+    updateStats();
+}
 
-    li.appendChild(checkbox);
-    li.appendChild(span);
-    li.appendChild(deleteButton);
-    list.appendChild(li);
+function add(text) {
+    items.push({
+        id: Date.now(),
+        text,
+        completed: false
+    });
+    save();
+    render();
+}
 
+function remove(index) {
+    items.splice(index, 1);
+    save();
+    render();
+}
+
+function reorder(newIndex) {
+    const moved = items.splice(dragIndex, 1)[0];
+    items.splice(newIndex, 0, moved);
+    save();
+    render();
+}
+
+function updateStats() {
+    const total = items.length;
+    const done = items.filter(i => i.completed).length;
+    stats.textContent = `Totalt: ${total} | Fullført: ${done}`;
+}
+
+form.addEventListener("submit", e => {
+    e.preventDefault();
+    const value = input.value.trim();
+    if (!value) return;
+    add(value);
     input.value = "";
 });
 
-function checkIfDone() {
-    const checkboxes = list.querySelectorAll("input[type='checkbox']");
+resetBtn.onclick = () => {
+    items = [];
+    save();
+    render();
+};
 
-    if (checkboxes.length === 0) {
-        status.style.display = "none";
-        return;
+themeToggle.onclick = () => {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+};
+
+bgPicker.addEventListener("input", e => {
+    document.documentElement.style.setProperty("--bg", e.target.value);
+    localStorage.setItem("bgColor", e.target.value);
+});
+
+function loadPreferences() {
+    const dark = localStorage.getItem("darkMode") === "true";
+    const bg = localStorage.getItem("bgColor");
+
+    if (dark) document.body.classList.add("dark");
+    if (bg) {
+        document.documentElement.style.setProperty("--bg", bg);
+        bgPicker.value = bg;
     }
-
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    status.style.display = allChecked ? "block" : "none";
 }
+
+loadPreferences();
+render();
