@@ -1,27 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Handleliste</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handleliste</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main>
-    <h1>Handleliste</h1>
+<main>
+    <header>
+        <h1>Handleliste</h1>
+        <div class="controls">
+            <button id="themeToggle">Dark</button>
+            <input type="color" id="bgPicker" title="Velg bakgrunn">
+        </div>
+    </header>
 
-    <form>
-        <input type="text" placeholder="Legg til vare">
-        <button>Legg til</button>
+    <form id="form">
+        <input id="input" type="text" placeholder="Legg til vare..." autocomplete="off">
+        <button type="submit">Legg til</button>
+        <button type="button" id="resetBtn">Nullstill</button>
     </form>
 
     <section>
-        <h2>Varer</h2>
-        <ul>
-        </ul>
-        <p id="status" style="display: none;">Du er ferdig 🎉</p>
+        <ul id="list"></ul>
+        <div id="stats"></div>
     </section>
-    </main>  
-    <script src="script.js"></script> 
+</main>
+
+<script src="script.js"></script>
 </body>
 </html>
